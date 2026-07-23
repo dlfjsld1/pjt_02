@@ -1,13 +1,13 @@
 """PubMed collection feature modules."""
 
-from .collector import collectPapers
+from .collector import collect_papers
 from .models import CollectionResult, Paper
-from .searchCriteria import SearchCriteria, validateSearchCriteria
+from .search_criteria import SearchCriteria, validate_search_criteria
 
 __all__ = [
     "CollectionResult",
     "Paper",
     "SearchCriteria",
-    "collectPapers",
-    "validateSearchCriteria",
+    "collect_papers",
+    "validate_search_criteria",
 ]

@@ -3,7 +3,7 @@ from typing import Any
 import streamlit as st
 
 
-def readSecret(*names: str, default: str = "") -> str:
+def read_secret(*names: str, default: str = "") -> str:
     for name in names:
         value = st.secrets.get(name)
         if value:
@@ -11,8 +11,8 @@ def readSecret(*names: str, default: str = "") -> str:
     return default
 
 
-def readNestedSecret(sectionName: str, *names: str, default: str = "") -> str:
-    section: Any = st.secrets.get(sectionName, {})
+def read_nested_secret(section_name: str, *names: str, default: str = "") -> str:
+    section: Any = st.secrets.get(section_name, {})
     for name in names:
         value = section.get(name) if hasattr(section, "get") else None
         if value:
@@ -20,32 +20,32 @@ def readNestedSecret(sectionName: str, *names: str, default: str = "") -> str:
     return default
 
 
-def getSupabaseCredentials() -> tuple[str, str]:
-    supabaseUrl = readSecret("SUPABASE_URL", "supabase_url")
-    supabaseKey = readSecret(
+def get_supabase_credentials() -> tuple[str, str]:
+    supabase_url = read_secret("SUPABASE_URL", "supabase_url")
+    supabase_key = read_secret(
         "SUPABASE_SECRET_KEY",
         "SUPABASE_SERVICE_ROLE_KEY",
         "SUPABASE_KEY",
         "supabase_secret_key",
         "supabase_key",
     )
-    if not supabaseUrl:
-        supabaseUrl = readNestedSecret("supabase", "url")
-    if not supabaseKey:
-        supabaseKey = readNestedSecret("supabase", "secret_key", "service_role_key", "key")
-    return supabaseUrl, supabaseKey
+    if not supabase_url:
+        supabase_url = read_nested_secret("supabase", "url")
+    if not supabase_key:
+        supabase_key = read_nested_secret("supabase", "secret_key", "service_role_key", "key")
+    return supabase_url, supabase_key
 
 
-def getOpenAiApiKey() -> str:
-    apiKey = readSecret("OPENAI_API_KEY", "openai_api_key")
-    if apiKey:
-        return apiKey
-    return readNestedSecret("openai", "api_key")
+def get_openai_api_key() -> str:
+    api_key = read_secret("OPENAI_API_KEY", "openai_api_key")
+    if api_key:
+        return api_key
+    return read_nested_secret("openai", "api_key")
 
 
-def getOpenAiModel() -> str:
-    model = readSecret("OPENAI_MODEL", "openai_model")
+def get_openai_model() -> str:
+    model = read_secret("OPENAI_MODEL", "openai_model")
     if model:
         return model
-    return readNestedSecret("openai", "model", default="gpt-5.6-luna")
+    return read_nested_secret("openai", "model", default="gpt-5.6-luna")
 

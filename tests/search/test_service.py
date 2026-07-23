@@ -1,4 +1,4 @@
-from src.search.service import filterPapers, papersToCsv
+from src.search.service import filter_papers, papers_to_csv
 
 
 PAPERS = [
@@ -19,19 +19,19 @@ PAPERS = [
 ]
 
 
-def testFilterPapersCombinesKeywordYearAndJournal() -> None:
-    results = filterPapers(
+def test_filter_papers_combines_keyword_year_and_journal() -> None:
+    results = filter_papers(
         PAPERS,
         keyword="diabetes",
-        startYear=2023,
-        endYear=2025,
+        start_year=2023,
+        end_year=2025,
         journal="Nature Medicine",
     )
     assert [paper["pmid"] for paper in results] == ["1"]
 
 
-def testPapersToCsvUsesUtf8Bom() -> None:
-    csvContent = papersToCsv(filterPapers(PAPERS))
-    assert csvContent.startswith(b"\xef\xbb\xbf")
-    assert b"Diabetes treatment review" in csvContent
+def test_papers_to_csv_uses_utf8_bom() -> None:
+    csv_content = papers_to_csv(filter_papers(PAPERS))
+    assert csv_content.startswith(b"\xef\xbb\xbf")
+    assert b"Diabetes treatment review" in csv_content
 

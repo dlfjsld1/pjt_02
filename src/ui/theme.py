@@ -99,6 +99,6 @@ h1, h2, h3, p, label { color: var(--ink); }
 """
 
 
-def applyTheme() -> None:
+def apply_theme() -> None:
     st.markdown(APP_CSS, unsafe_allow_html=True)
 

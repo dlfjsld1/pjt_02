@@ -10,9 +10,9 @@ from .models import Paper
 class PaperStore(Protocol):
     """Persistence contract shared by collection, overview, and search."""
 
-    def savePapers(self, papers: list[Paper]) -> tuple[int, int]: ...
+    def save_papers(self, papers: list[Paper]) -> tuple[int, int]: ...
 
-    def loadPapers(self, limit: int = 1000) -> list[dict[str, Any]]: ...
+    def load_papers(self, limit: int = 1000) -> list[dict[str, Any]]: ...
 
 
 class PaperRepository:
@@ -22,38 +22,38 @@ class PaperRepository:
         if client is not None:
             self.client = client
             return
-        from src.config import getSupabaseCredentials
+        from src.config import get_supabase_credentials
 
-        supabaseUrl, supabaseKey = getSupabaseCredentials()
-        if not supabaseUrl or not supabaseKey:
+        supabase_url, supabase_key = get_supabase_credentials()
+        if not supabase_url or not supabase_key:
             raise RuntimeError("Supabase URL과 서버 키를 secrets.toml에 설정해 주세요.")
-        if supabaseKey.startswith("sb_publishable_"):
+        if supabase_key.startswith("sb_publishable_"):
             raise RuntimeError(
                 "SUPABASE_SECRET_KEY에는 publishable 키가 아닌 sb_secret 서버 키를 설정해 주세요."
             )
         from supabase import create_client
 
-        self.client = create_client(supabaseUrl, supabaseKey)
+        self.client = create_client(supabase_url, supabase_key)
 
-    def savePapers(self, papers: list[Paper]) -> tuple[int, int]:
+    def save_papers(self, papers: list[Paper]) -> tuple[int, int]:
         if not papers:
             return 0, 0
         pmids = [paper.pmid for paper in papers]
-        existingResponse = (
+        existing_response = (
             self.client.table("papers")
             .select("pmid")
             .in_("pmid", pmids)
             .execute()
         )
-        existingPmids = {str(row["pmid"]) for row in existingResponse.data or []}
-        newPapers = [paper for paper in papers if paper.pmid not in existingPmids]
-        if newPapers:
+        existing_pmids = {str(row["pmid"]) for row in existing_response.data or []}
+        new_papers = [paper for paper in papers if paper.pmid not in existing_pmids]
+        if new_papers:
             self.client.table("papers").insert(
-                [self.serializePaper(paper) for paper in newPapers]
+                [self.serialize_paper(paper) for paper in new_papers]
             ).execute()
-        return len(newPapers), len(papers) - len(newPapers)
+        return len(new_papers), len(papers) - len(new_papers)
 
-    def loadPapers(self, limit: int = 1000) -> list[dict[str, Any]]:
+    def load_papers(self, limit: int = 1000) -> list[dict[str, Any]]:
         response = (
             self.client.table("papers")
             .select("pmid, title, abstract, journal, pub_year, authors")
@@ -64,18 +64,18 @@ class PaperRepository:
         return list(response.data or [])
 
     @staticmethod
-    def serializePaper(paper: Paper) -> dict[str, Any]:
+    def serialize_paper(paper: Paper) -> dict[str, Any]:
         return {
             "pmid": paper.pmid,
             "title": paper.title,
             "abstract": paper.abstract,
             "journal": paper.journal,
-            "pub_year": paper.pubYear,
+            "pub_year": paper.pub_year,
             "authors": paper.authors,
         }
 
 
-def savePapers(repository: PaperStore, papers: list[Paper]) -> tuple[int, int]:
+def save_papers(repository: PaperStore, papers: list[Paper]) -> tuple[int, int]:
     """Save papers through the shared repository contract."""
 
-    return repository.savePapers(papers)
+    return repository.save_papers(papers)

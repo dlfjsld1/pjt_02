@@ -3,40 +3,40 @@
 from __future__ import annotations
 
 from .models import CollectionResult
-from .paperRepository import PaperRepository, PaperStore
-from .pubmedClient import PubMedClient
-from .searchCriteria import validateSearchCriteria
-from .xmlParser import parsePubMedArticles
+from .paper_repository import PaperRepository, PaperStore
+from .pubmed_client import PubMedClient
+from .search_criteria import validate_search_criteria
+from .xml_parser import parse_pubmed_articles
 
 
-def collectPapers(
+def collect_papers(
     keyword: str,
-    startYear: int,
-    endYear: int,
-    maxResults: int,
+    start_year: int,
+    end_year: int,
+    max_results: int,
     *,
     client: PubMedClient | None = None,
     repository: PaperStore | None = None,
 ) -> CollectionResult:
     """Collect PubMed papers in batches and save only previously unseen PMIDs."""
 
-    criteria, errors = validateSearchCriteria(keyword, startYear, endYear, maxResults)
+    criteria, errors = validate_search_criteria(keyword, start_year, end_year, max_results)
 
     if errors or criteria is None:
         raise ValueError(" ".join(errors))
 
-    pubmedClient = client if client is not None else PubMedClient()
-    pmids = pubmedClient.searchPmids(criteria)
-    xmlText = pubmedClient.fetchArticles(pmids)
-    papers = parsePubMedArticles(xmlText)
+    pubmed_client = client if client is not None else PubMedClient()
+    pmids = pubmed_client.search_pmids(criteria)
+    xml_text = pubmed_client.fetch_articles(pmids)
+    papers = parse_pubmed_articles(xml_text)
 
-    paperRepository = repository if repository is not None else PaperRepository()
-    insertedCount, skippedCount = paperRepository.savePapers(papers)
+    paper_repository = repository if repository is not None else PaperRepository()
+    inserted_count, skipped_count = paper_repository.save_papers(papers)
 
     return CollectionResult(
-        requestedCount = len(pmids),
-        fetchedCount = len(papers),
-        insertedCount = insertedCount,
-        skippedCount = skippedCount,
+        requested_count = len(pmids),
+        fetched_count = len(papers),
+        inserted_count = inserted_count,
+        skipped_count = skipped_count,
         pmids = pmids,
     )

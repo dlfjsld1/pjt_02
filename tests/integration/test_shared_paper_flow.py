@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.analytics.overview import getOverviewMetrics
-from src.collection.collector import collectPapers
+from src.analytics.overview import get_overview_metrics
+from src.collection.collector import collect_papers
 from src.collection.models import Paper
-from src.search.service import filterPapers
+from src.search.service import filter_papers
 
 
 THREE_PAPERS_XML = """
@@ -34,10 +34,10 @@ THREE_PAPERS_XML = """
 class FakePubMedClient:
     """Return three deterministic PubMed records."""
 
-    def searchPmids(self, criteria: Any) -> list[str]:
+    def search_pmids(self, criteria: Any) -> list[str]:
         return ["91001", "91002", "91003"]
 
-    def fetchArticles(self, pmids: list[str]) -> str:
+    def fetch_articles(self, pmids: list[str]) -> str:
         return THREE_PAPERS_XML
 
 
@@ -47,34 +47,34 @@ class InMemoryPaperRepository:
     def __init__(self) -> None:
         self.papers: dict[str, Paper] = {}
 
-    def savePapers(self, papers: list[Paper]) -> tuple[int, int]:
-        insertedCount = 0
+    def save_papers(self, papers: list[Paper]) -> tuple[int, int]:
+        inserted_count = 0
         for paper in papers:
             if paper.pmid in self.papers:
                 continue
             self.papers[paper.pmid] = paper
-            insertedCount += 1
-        return insertedCount, len(papers) - insertedCount
+            inserted_count += 1
+        return inserted_count, len(papers) - inserted_count
 
-    def loadPapers(self, limit: int = 1000) -> list[dict[str, object]]:
+    def load_papers(self, limit: int = 1000) -> list[dict[str, object]]:
         return [
             {
                 "pmid": paper.pmid,
                 "title": paper.title,
                 "abstract": paper.abstract,
                 "journal": paper.journal,
-                "pub_year": paper.pubYear,
+                "pub_year": paper.pub_year,
                 "authors": paper.authors,
             }
             for paper in list(self.papers.values())[:limit]
         ]
 
 
-def testCollectionOverviewAndSearchUseTheSameThreePapers() -> None:
+def test_collection_overview_and_search_use_the_same_three_papers() -> None:
     repository = InMemoryPaperRepository()
     client = FakePubMedClient()
 
-    firstResult = collectPapers(
+    first_result = collect_papers(
         "asthma",
         2023,
         2024,
@@ -82,7 +82,7 @@ def testCollectionOverviewAndSearchUseTheSameThreePapers() -> None:
         client = client,
         repository = repository,
     )
-    secondResult = collectPapers(
+    second_result = collect_papers(
         "asthma",
         2023,
         2024,
@@ -90,15 +90,15 @@ def testCollectionOverviewAndSearchUseTheSameThreePapers() -> None:
         client = client,
         repository = repository,
     )
-    storedPapers = repository.loadPapers()
-    overviewMetrics = getOverviewMetrics(repository)
-    searchResults = filterPapers(storedPapers, keyword = "asthma")
+    stored_papers = repository.load_papers()
+    overview_metrics = get_overview_metrics(repository)
+    search_results = filter_papers(stored_papers, keyword = "asthma")
 
-    assert firstResult.insertedCount == 3
-    assert firstResult.skippedCount == 0
-    assert secondResult.insertedCount == 0
-    assert secondResult.skippedCount == 3
-    assert len(storedPapers) == 3
-    assert overviewMetrics.totalPapers == 3
-    assert len(searchResults) == 3
-    assert {paper["pmid"] for paper in searchResults} == {"91001", "91002", "91003"}
+    assert first_result.inserted_count == 3
+    assert first_result.skipped_count == 0
+    assert second_result.inserted_count == 0
+    assert second_result.skipped_count == 3
+    assert len(stored_papers) == 3
+    assert overview_metrics.total_papers == 3
+    assert len(search_results) == 3
+    assert {paper["pmid"] for paper in search_results} == {"91001", "91002", "91003"}

@@ -4,39 +4,39 @@ from __future__ import annotations
 
 import streamlit as st
 
-from components.collection_sidebar import renderCollectionSidebar
-from src.analytics.overview import getOverviewMetrics
+from components.collection_sidebar import render_collection_sidebar
+from src.analytics.overview import get_overview_metrics
 
 st.set_page_config(page_title = "논문 개요", page_icon = "📊", layout = "wide")
 
-renderCollectionSidebar()
-lastCollectionResult = st.session_state.get(
+render_collection_sidebar()
+last_collection_result = st.session_state.get(
     "collectionLastResult",
     {"insertedCount": 0, "skippedCount": 0},
 )
-overviewMetrics = getOverviewMetrics()
+overview_metrics = get_overview_metrics()
 
 st.title("PubMed 논문 개요")
-totalColumn, insertedColumn, skippedColumn, journalColumn = st.columns(4)
-totalColumn.metric("전체 논문 수", overviewMetrics.totalPapers)
-insertedColumn.metric("방금 수집한 신규 논문 수", lastCollectionResult["insertedCount"])
-skippedColumn.metric("방금 건너뛴 중복 논문 수", lastCollectionResult["skippedCount"])
-journalColumn.metric("총 저널 수", overviewMetrics.totalJournals)
+total_column, inserted_column, skipped_column, journal_column = st.columns(4)
+total_column.metric("전체 논문 수", overview_metrics.total_papers)
+inserted_column.metric("방금 수집한 신규 논문 수", last_collection_result["insertedCount"])
+skipped_column.metric("방금 건너뛴 중복 논문 수", last_collection_result["skippedCount"])
+journal_column.metric("총 저널 수", overview_metrics.total_journals)
 
-yearColumn, journalChartColumn = st.columns(2)
+year_column, journal_chart_column = st.columns(2)
 
-with yearColumn:
+with year_column:
     st.subheader("연도별 논문 수")
 
-    if overviewMetrics.papersByYear:
-        st.bar_chart(overviewMetrics.papersByYear, x = "year", y = "count")
+    if overview_metrics.papers_by_year:
+        st.bar_chart(overview_metrics.papers_by_year, x = "year", y = "count")
     else:
         st.info("표시할 연도별 논문 데이터가 없습니다.")
 
-with journalChartColumn:
+with journal_chart_column:
     st.subheader("논문 수 기준 상위 저널")
 
-    if overviewMetrics.topJournals:
-        st.bar_chart(overviewMetrics.topJournals, x = "journal", y = "count")
+    if overview_metrics.top_journals:
+        st.bar_chart(overview_metrics.top_journals, x = "journal", y = "count")
     else:
         st.info("표시할 저널 데이터가 없습니다.")

@@ -5,9 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
-from src.collection.collector import collectPapers
+from src.collection.collector import collect_papers
 from src.collection.models import CollectionResult
-from src.collection.searchCriteria import SearchCriteria, validateSearchCriteria
+from src.collection.search_criteria import SearchCriteria, validate_search_criteria
 
 
 @dataclass(frozen = True)
@@ -15,35 +15,35 @@ class CollectionSidebarResult:
     """The validated sidebar submission for the collection workflow."""
 
     criteria: SearchCriteria | None
-    collectRequested: bool
-    collectionResult: CollectionResult | None
+    collect_requested: bool
+    collection_result: CollectionResult | None
 
 
-def renderCollectionSidebar() -> CollectionSidebarResult:
+def render_collection_sidebar() -> CollectionSidebarResult:
     """Render collection inputs and return criteria only when the submission is valid."""
 
     import streamlit as st
 
-    currentYear = date.today().year
+    current_year = date.today().year
     st.sidebar.header("논문 수집")
     keyword = st.sidebar.text_input("검색 키워드", key = "collectionKeyword")
-    startYear = st.sidebar.number_input(
+    start_year = st.sidebar.number_input(
         "검색 시작 연도",
         min_value = 1900,
-        max_value = currentYear,
-        value = currentYear,
+        max_value = current_year,
+        value = current_year,
         step = 1,
         key = "collectionStartYear",
     )
-    endYear = st.sidebar.number_input(
+    end_year = st.sidebar.number_input(
         "검색 종료 연도",
         min_value = 1900,
-        max_value = currentYear,
-        value = currentYear,
+        max_value = current_year,
+        value = current_year,
         step = 1,
         key = "collectionEndYear",
     )
-    maxResults = st.sidebar.number_input(
+    max_results = st.sidebar.number_input(
         "최대 수집 논문 수",
         min_value = 1,
         max_value = 100,
@@ -51,20 +51,20 @@ def renderCollectionSidebar() -> CollectionSidebarResult:
         step = 1,
         key = "collectionMaxResults",
     )
-    collectRequested = st.sidebar.button("논문 수집", key = "collectPapers")
+    collect_requested = st.sidebar.button("논문 수집", key = "collectPapers")
 
-    if not collectRequested:
+    if not collect_requested:
         return CollectionSidebarResult(
             criteria = None,
-            collectRequested = False,
-            collectionResult = None,
+            collect_requested = False,
+            collection_result = None,
         )
 
-    criteria, errors = validateSearchCriteria(
+    criteria, errors = validate_search_criteria(
         keyword = keyword,
-        startYear = int(startYear),
-        endYear = int(endYear),
-        maxResults = int(maxResults),
+        start_year = int(start_year),
+        end_year = int(end_year),
+        max_results = int(max_results),
     )
 
     for error in errors:
@@ -73,35 +73,35 @@ def renderCollectionSidebar() -> CollectionSidebarResult:
     if criteria is None:
         return CollectionSidebarResult(
             criteria = None,
-            collectRequested = True,
-            collectionResult = None,
+            collect_requested = True,
+            collection_result = None,
         )
 
     try:
-        collectionResult = collectPapers(
+        collection_result = collect_papers(
             criteria.keyword,
-            criteria.startYear,
-            criteria.endYear,
-            criteria.maxResults,
+            criteria.start_year,
+            criteria.end_year,
+            criteria.max_results,
         )
     except Exception as error:
         st.sidebar.error(f"논문 수집에 실패했습니다: {error}")
         return CollectionSidebarResult(
             criteria = criteria,
-            collectRequested = True,
-            collectionResult = None,
+            collect_requested = True,
+            collection_result = None,
         )
 
     st.sidebar.success(
-        f"신규 {collectionResult.insertedCount}건, "
-        f"중복 건너뜀 {collectionResult.skippedCount}건"
+        f"신규 {collection_result.inserted_count}건, "
+        f"중복 건너뜀 {collection_result.skipped_count}건"
     )
     st.session_state["collectionLastResult"] = {
-        "insertedCount": collectionResult.insertedCount,
-        "skippedCount": collectionResult.skippedCount,
+        "insertedCount": collection_result.inserted_count,
+        "skippedCount": collection_result.skipped_count,
     }
     return CollectionSidebarResult(
         criteria = criteria,
-        collectRequested = True,
-        collectionResult = collectionResult,
+        collect_requested = True,
+        collection_result = collection_result,
     )

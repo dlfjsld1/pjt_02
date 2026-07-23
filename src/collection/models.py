@@ -13,7 +13,7 @@ class Paper:
     title: str
     abstract: str
     journal: str
-    pubYear: int | None
+    pub_year: int | None
     authors: str
 
 
@@ -21,8 +21,8 @@ class Paper:
 class CollectionResult:
     """Counts and identifiers produced by one collection request."""
 
-    requestedCount: int
-    fetchedCount: int
-    insertedCount: int
-    skippedCount: int
+    requested_count: int
+    fetched_count: int
+    inserted_count: int
+    skipped_count: int
     pmids: list[str]

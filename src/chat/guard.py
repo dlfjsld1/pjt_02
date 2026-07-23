@@ -17,18 +17,18 @@ DIRECT_ADVICE_PATTERN = re.compile(
 )
 
 
-def asksForPersonalMedicalAdvice(question: str) -> bool:
-    normalizedQuestion = " ".join(question.split())
-    if DIRECT_ADVICE_PATTERN.search(normalizedQuestion):
+def asks_for_personal_medical_advice(question: str) -> bool:
+    normalized_question = " ".join(question.split())
+    if DIRECT_ADVICE_PATTERN.search(normalized_question):
         return True
     return bool(
-        PERSONAL_CONTEXT_PATTERN.search(normalizedQuestion)
-        and MEDICAL_DECISION_PATTERN.search(normalizedQuestion)
+        PERSONAL_CONTEXT_PATTERN.search(normalized_question)
+        and MEDICAL_DECISION_PATTERN.search(normalized_question)
     )
 
 
-def getMedicalRefusal(question: str) -> str | None:
-    if asksForPersonalMedicalAdvice(question):
+def get_medical_refusal(question: str) -> str | None:
+    if asks_for_personal_medical_advice(question):
         return MEDICAL_ADVICE_REFUSAL
     return None
 

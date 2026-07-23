@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import unittest
 
-from src.collection.collector import collectPapers
+from src.collection.collector import collect_papers
 from src.collection.models import Paper
-from src.collection.pubmedClient import PUBMED_EFETCH_URL, PubMedClient
-from src.collection.xmlParser import parsePubMedArticles
+from src.collection.pubmed_client import PUBMED_EFETCH_URL, PubMedClient
+from src.collection.xml_parser import parse_pubmed_articles
 
 SAMPLE_XML = """
 <PubmedArticleSet>
@@ -57,8 +57,8 @@ class FakeSession:
 
     def __init__(self) -> None:
         self.calls: list[tuple[str, dict[str, str | int], int]] = []
-        self.searchError: Exception | None = None
-        self.searchPayload: object = {"esearchresult": {"idlist": ["1001", "1002"]}}
+        self.search_error: Exception | None = None
+        self.search_payload: object = {"esearchresult": {"idlist": ["1001", "1002"]}}
 
     def get(
         self,
@@ -72,8 +72,8 @@ class FakeSession:
         if url == PUBMED_EFETCH_URL:
             return FakeResponse(text = SAMPLE_XML)
 
-        response = FakeResponse(payload = self.searchPayload)
-        response.error = self.searchError
+        response = FakeResponse(payload = self.search_payload)
+        response.error = self.search_error
         return response
 
 
@@ -83,23 +83,23 @@ class InMemoryPaperRepository:
     def __init__(self) -> None:
         self.papers: dict[str, Paper] = {}
 
-    def savePapers(self, papers: list[Paper]) -> tuple[int, int]:
-        insertedCount = 0
+    def save_papers(self, papers: list[Paper]) -> tuple[int, int]:
+        inserted_count = 0
         for paper in papers:
             if paper.pmid in self.papers:
                 continue
             self.papers[paper.pmid] = paper
-            insertedCount += 1
-        return insertedCount, len(papers) - insertedCount
+            inserted_count += 1
+        return inserted_count, len(papers) - inserted_count
 
-    def loadPapers(self, limit: int = 1000) -> list[dict[str, object]]:
+    def load_papers(self, limit: int = 1000) -> list[dict[str, object]]:
         return [
             {
                 "pmid": paper.pmid,
                 "title": paper.title,
                 "abstract": paper.abstract,
                 "journal": paper.journal,
-                "pub_year": paper.pubYear,
+                "pub_year": paper.pub_year,
                 "authors": paper.authors,
             }
             for paper in list(self.papers.values())[:limit]
@@ -114,8 +114,8 @@ class CollectorTest(unittest.TestCase):
         self.client = PubMedClient(session = self.session, environment = {"NCBI_API_KEY": "test-key"})
         self.repository = InMemoryPaperRepository()
 
-    def testCollectPapersStoresMetadataAndSkipsExistingPmids(self) -> None:
-        firstResult = collectPapers(
+    def test_collect_papers_stores_metadata_and_skips_existing_pmids(self) -> None:
+        first_result = collect_papers(
             "COVID-19 vaccine",
             2022,
             2025,
@@ -123,7 +123,7 @@ class CollectorTest(unittest.TestCase):
             client = self.client,
             repository = self.repository,
         )
-        secondResult = collectPapers(
+        second_result = collect_papers(
             "COVID-19 vaccine",
             2022,
             2025,
@@ -132,20 +132,20 @@ class CollectorTest(unittest.TestCase):
             repository = self.repository,
         )
 
-        self.assertEqual(firstResult.requestedCount, 2)
-        self.assertEqual(firstResult.fetchedCount, 2)
-        self.assertEqual(firstResult.insertedCount, 2)
-        self.assertEqual(firstResult.skippedCount, 0)
-        self.assertEqual(firstResult.pmids, ["1001", "1002"])
-        storedPaper = self.repository.papers["1001"]
+        self.assertEqual(first_result.requested_count, 2)
+        self.assertEqual(first_result.fetched_count, 2)
+        self.assertEqual(first_result.inserted_count, 2)
+        self.assertEqual(first_result.skipped_count, 0)
+        self.assertEqual(first_result.pmids, ["1001", "1002"])
+        stored_paper = self.repository.papers["1001"]
         self.assertEqual(
             (
-                storedPaper.pmid,
-                storedPaper.title,
-                storedPaper.abstract,
-                storedPaper.journal,
-                storedPaper.pubYear,
-                storedPaper.authors,
+                stored_paper.pmid,
+                stored_paper.title,
+                stored_paper.abstract,
+                stored_paper.journal,
+                stored_paper.pub_year,
+                stored_paper.authors,
             ),
             (
                 "1001",
@@ -156,11 +156,11 @@ class CollectorTest(unittest.TestCase):
                 "Ada Kim, Research Group",
             ),
         )
-        self.assertEqual(secondResult.insertedCount, 0)
-        self.assertEqual(secondResult.skippedCount, 2)
+        self.assertEqual(second_result.inserted_count, 0)
+        self.assertEqual(second_result.skipped_count, 2)
 
-    def testCollectPapersUsesBatchFetchWithTimeoutAndApiKey(self) -> None:
-        collectPapers(
+    def test_collect_papers_uses_batch_fetch_with_timeout_and_api_key(self) -> None:
+        collect_papers(
             "COVID-19 vaccine",
             2022,
             2025,
@@ -169,29 +169,29 @@ class CollectorTest(unittest.TestCase):
             repository = self.repository,
         )
 
-        searchUrl, searchParameters, searchTimeout = self.session.calls[0]
-        fetchUrl, fetchParameters, fetchTimeout = self.session.calls[1]
-        self.assertIn("esearch.fcgi", searchUrl)
-        self.assertEqual(searchParameters["api_key"], "test-key")
-        self.assertEqual(searchTimeout, 15)
-        self.assertEqual(fetchUrl, PUBMED_EFETCH_URL)
-        self.assertEqual(fetchParameters["id"], "1001,1002")
-        self.assertEqual(fetchParameters["api_key"], "test-key")
-        self.assertEqual(fetchTimeout, 15)
+        search_url, search_parameters, search_timeout = self.session.calls[0]
+        fetch_url, fetch_parameters, fetch_timeout = self.session.calls[1]
+        self.assertIn("esearch.fcgi", search_url)
+        self.assertEqual(search_parameters["api_key"], "test-key")
+        self.assertEqual(search_timeout, 15)
+        self.assertEqual(fetch_url, PUBMED_EFETCH_URL)
+        self.assertEqual(fetch_parameters["id"], "1001,1002")
+        self.assertEqual(fetch_parameters["api_key"], "test-key")
+        self.assertEqual(fetch_timeout, 15)
 
-    def testParsePubMedArticlesHandlesMissingMetadata(self) -> None:
-        papers = parsePubMedArticles(SAMPLE_XML)
+    def test_parse_pub_med_articles_handles_missing_metadata(self) -> None:
+        papers = parse_pubmed_articles(SAMPLE_XML)
 
         self.assertEqual(papers[0].abstract, "Background text. Result text.")
         self.assertEqual(papers[0].authors, "Ada Kim, Research Group")
         self.assertEqual(papers[1].journal, "Journal Two")
-        self.assertEqual(papers[1].pubYear, 2023)
+        self.assertEqual(papers[1].pub_year, 2023)
         self.assertEqual(papers[1].abstract, "")
         self.assertEqual(papers[1].authors, "")
 
-    def testCollectPapersRejectsInvalidInputBeforeRequest(self) -> None:
+    def test_collect_papers_rejects_invalid_input_before_request(self) -> None:
         with self.assertRaisesRegex(ValueError, "검색 키워드"):
-            collectPapers(
+            collect_papers(
                 " ",
                 2022,
                 2025,
@@ -202,11 +202,11 @@ class CollectorTest(unittest.TestCase):
 
         self.assertEqual(self.session.calls, [])
 
-    def testCollectPapersPropagatesHttpErrors(self) -> None:
-        self.session.searchError = RuntimeError("HTTP 500")
+    def test_collect_papers_propagates_http_errors(self) -> None:
+        self.session.search_error = RuntimeError("HTTP 500")
 
         with self.assertRaisesRegex(RuntimeError, "HTTP 500"):
-            collectPapers(
+            collect_papers(
                 "COVID-19 vaccine",
                 2022,
                 2025,
@@ -215,11 +215,11 @@ class CollectorTest(unittest.TestCase):
                 repository = self.repository,
             )
 
-    def testCollectPapersRejectsMalformedSearchResponse(self) -> None:
-        self.session.searchPayload = ["not", "an", "object"]
+    def test_collect_papers_rejects_malformed_search_response(self) -> None:
+        self.session.search_payload = ["not", "an", "object"]
 
         with self.assertRaisesRegex(ValueError, "응답 형식"):
-            collectPapers(
+            collect_papers(
                 "COVID-19 vaccine",
                 2022,
                 2025,

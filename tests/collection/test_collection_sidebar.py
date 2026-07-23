@@ -45,38 +45,38 @@ class FakeSidebar:
 class CollectionSidebarTest(unittest.TestCase):
     """Confirm only valid sidebar input invokes the collection workflow."""
 
-    def testRenderCollectionSidebarCollectsValidInput(self) -> None:
+    def test_render_collection_sidebar_collects_valid_input(self) -> None:
         sidebar = FakeSidebar("COVID-19 vaccine")
         streamlit = SimpleNamespace(sidebar = sidebar, session_state = {})
-        expectedResult = CollectionResult(2, 2, 2, 0, ["1001", "1002"])
+        expected_result = CollectionResult(2, 2, 2, 0, ["1001", "1002"])
 
         with patch.dict(sys.modules, {"streamlit": streamlit}):
-            from components.collection_sidebar import renderCollectionSidebar
+            from components.collection_sidebar import render_collection_sidebar
 
             with patch(
-                "components.collection_sidebar.collectPapers",
-                return_value = expectedResult,
-            ) as collectMock:
-                result = renderCollectionSidebar()
+                "components.collection_sidebar.collect_papers",
+                return_value = expected_result,
+            ) as collect_mock:
+                result = render_collection_sidebar()
 
-        collectMock.assert_called_once_with("COVID-19 vaccine", 2022, 2025, 100)
-        self.assertEqual(result.collectionResult, expectedResult)
+        collect_mock.assert_called_once_with("COVID-19 vaccine", 2022, 2025, 100)
+        self.assertEqual(result.collection_result, expected_result)
         self.assertEqual(sidebar.successes, ["신규 2건, 중복 건너뜀 0건"])
         self.assertEqual(
             streamlit.session_state["collectionLastResult"],
             {"insertedCount": 2, "skippedCount": 0},
         )
 
-    def testRenderCollectionSidebarDoesNotCollectInvalidInput(self) -> None:
+    def test_render_collection_sidebar_does_not_collect_invalid_input(self) -> None:
         sidebar = FakeSidebar("   ")
         streamlit = SimpleNamespace(sidebar = sidebar, session_state = {})
 
         with patch.dict(sys.modules, {"streamlit": streamlit}):
-            from components.collection_sidebar import renderCollectionSidebar
+            from components.collection_sidebar import render_collection_sidebar
 
-            with patch("components.collection_sidebar.collectPapers") as collectMock:
-                result = renderCollectionSidebar()
+            with patch("components.collection_sidebar.collect_papers") as collect_mock:
+                result = render_collection_sidebar()
 
-        collectMock.assert_not_called()
-        self.assertIsNone(result.collectionResult)
+        collect_mock.assert_not_called()
+        self.assertIsNone(result.collection_result)
         self.assertEqual(sidebar.errors, ["검색 키워드를 입력하세요."])

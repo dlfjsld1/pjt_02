@@ -10,33 +10,33 @@ AUTH_REQUIRED_FIELDS = (
 )
 
 
-def isAuthConfigured() -> bool:
-    authConfig = st.secrets.get("auth", {})
-    if not hasattr(authConfig, "get"):
+def is_auth_configured() -> bool:
+    auth_config = st.secrets.get("auth", {})
+    if not hasattr(auth_config, "get"):
         return False
-    return all(authConfig.get(fieldName) for fieldName in AUTH_REQUIRED_FIELDS)
+    return all(auth_config.get(field_name) for field_name in AUTH_REQUIRED_FIELDS)
 
 
-def isLoggedIn() -> bool:
-    if not isAuthConfigured():
+def is_logged_in() -> bool:
+    if not is_auth_configured():
         return True
     return bool(st.user.is_logged_in)
 
 
-def getCurrentUserId() -> str:
-    if not isAuthConfigured():
+def get_current_user_id() -> str:
+    if not is_auth_configured():
         return "development-user"
-    userId = getattr(st.user, "sub", None) or getattr(st.user, "email", None)
-    return str(userId or "authenticated-user")
+    user_id = getattr(st.user, "sub", None) or getattr(st.user, "email", None)
+    return str(user_id or "authenticated-user")
 
 
-def getCurrentUserName() -> str:
-    if not isAuthConfigured():
+def get_current_user_name() -> str:
+    if not is_auth_configured():
         return "개발 사용자"
-    userName = getattr(st.user, "name", None) or getattr(st.user, "email", None)
-    return str(userName or "사용자")
+    user_name = getattr(st.user, "name", None) or getattr(st.user, "email", None)
+    return str(user_name or "사용자")
 
 
-def requireLogin() -> None:
-    if isAuthConfigured() and not isLoggedIn():
+def require_login() -> None:
+    if is_auth_configured() and not is_logged_in():
         st.switch_page("app.py")
