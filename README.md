@@ -2,6 +2,10 @@
 
 PubMed 논문 메타데이터를 수집·검색하고, 연구 맥락의 질문을 돕는 Streamlit 기반 연구 보조 서비스입니다.
 
+## 배포
+
+[Meditoktok 바로가기](https://meditoktok.streamlit.app/)
+
 ## 기술 스택
 
 | 영역 | 사용 기술 | 용도 |
