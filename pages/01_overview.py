@@ -6,8 +6,12 @@ import streamlit as st
 
 from components.collection_sidebar import render_collection_sidebar
 from src.analytics.overview import get_overview_metrics
+from src.auth.service import require_login
+from src.ui.theme import apply_theme
 
 st.set_page_config(page_title = "논문 개요", page_icon = "📊", layout = "wide")
+require_login()
+apply_theme()
 
 render_collection_sidebar()
 last_collection_result = st.session_state.get(
@@ -17,6 +21,7 @@ last_collection_result = st.session_state.get(
 overview_metrics = get_overview_metrics()
 
 st.title("PubMed 논문 개요")
+st.caption("수집한 논문의 규모와 연도, 저널 분포를 한눈에 확인하세요.")
 total_column, inserted_column, skipped_column, journal_column = st.columns(4)
 total_column.metric("전체 논문 수", overview_metrics.total_papers)
 inserted_column.metric("방금 수집한 신규 논문 수", last_collection_result["insertedCount"])

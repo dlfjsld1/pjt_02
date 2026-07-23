@@ -10,6 +10,16 @@ from unittest.mock import patch
 from src.collection.models import CollectionResult
 
 
+class FakeSpinner:
+    """Minimal context manager for Streamlit loading feedback."""
+
+    def __enter__(self) -> None:
+        return None
+
+    def __exit__(self, *_args: object) -> None:
+        return None
+
+
 class FakeSidebar:
     """A minimal Streamlit sidebar replacement for UI flow tests."""
 
@@ -34,6 +44,9 @@ class FakeSidebar:
 
     def button(self, _label: str, *, key: str) -> bool:
         return True
+
+    def spinner(self, _message: str) -> FakeSpinner:
+        return FakeSpinner()
 
     def error(self, message: str) -> None:
         self.errors.append(message)

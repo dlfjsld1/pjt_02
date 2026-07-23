@@ -78,14 +78,15 @@ def render_collection_sidebar() -> CollectionSidebarResult:
         )
 
     try:
-        collection_result = collect_papers(
-            criteria.keyword,
-            criteria.start_year,
-            criteria.end_year,
-            criteria.max_results,
-        )
-    except Exception as error:
-        st.sidebar.error(f"논문 수집에 실패했습니다: {error}")
+        with st.sidebar.spinner("PubMed 논문을 수집하고 있습니다..."):
+            collection_result = collect_papers(
+                criteria.keyword,
+                criteria.start_year,
+                criteria.end_year,
+                criteria.max_results,
+            )
+    except Exception:
+        st.sidebar.error("논문 수집에 실패했습니다. 네트워크와 API 설정을 확인한 뒤 다시 시도해 주세요.")
         return CollectionSidebarResult(
             criteria = criteria,
             collect_requested = True,
