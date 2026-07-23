@@ -13,7 +13,7 @@ REQUEST_TIMEOUT_SECONDS = 15;
 class HttpResponse(Protocol):
     """The small response surface required from an HTTP client."""
 
-    def json(self) -> dict[str, object]: ...
+    def json(self) -> object: ...
 
     @property
     def text(self) -> str: ...
@@ -61,6 +61,10 @@ class PubMedClient:
         response = self.session.get(url, params = parameters, timeout = self.timeout);
         response.raise_for_status();
         payload = response.json();
+
+        if not isinstance(payload, dict):
+            raise ValueError("PubMed 검색 응답 형식이 올바르지 않습니다.");
+
         result = payload.get("esearchresult", {});
 
         if not isinstance(result, dict):
