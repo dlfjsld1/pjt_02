@@ -151,7 +151,23 @@ h1, h2, h3, p, label { color: var(--ink); }
     background: rgba(255, 255, 255, 0.86);
     box-shadow: var(--shadow);
 }
+[data-testid="stChatInput"] > div {
+    background: transparent;
+}
+[data-testid="stChatInput"] textarea {
+    padding: 0.55rem 0.9rem;
+    border: 0;
+    border-radius: 16px;
+    background: transparent;
+    box-shadow: none;
+}
+[data-testid="stChatInput"] textarea:focus {
+    border: 0;
+    box-shadow: none;
+}
 [data-testid="stChatInput"] button {
+    min-width: 2.5rem;
+    min-height: 2.5rem;
     border-radius: 16px 13px 18px 13px;
     background: linear-gradient(145deg, #7b89ef, var(--accent-dark));
     box-shadow: 6px 8px 15px rgba(79, 95, 212, 0.27), inset 2px 2px 2px rgba(255, 255, 255, 0.23);
