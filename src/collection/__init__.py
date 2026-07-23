@@ -1,8 +1,8 @@
 """PubMed collection feature modules."""
 
-from .collector import collectPapers;
-from .models import CollectionResult, Paper;
-from .searchCriteria import SearchCriteria, validateSearchCriteria;
+from .collector import collectPapers
+from .models import CollectionResult, Paper
+from .searchCriteria import SearchCriteria, validateSearchCriteria
 
 __all__ = [
     "CollectionResult",
@@ -10,4 +10,4 @@ __all__ = [
     "SearchCriteria",
     "collectPapers",
     "validateSearchCriteria",
-];
+]

@@ -1,4 +1,4 @@
-from src.search.service import filterPapers, papersToCsv;
+from src.search.service import filterPapers, papersToCsv
 
 
 PAPERS = [
@@ -16,7 +16,7 @@ PAPERS = [
         "journal": "The Lancet",
         "pub_year": 2021,
     },
-];
+]
 
 
 def testFilterPapersCombinesKeywordYearAndJournal() -> None:
@@ -26,12 +26,12 @@ def testFilterPapersCombinesKeywordYearAndJournal() -> None:
         startYear=2023,
         endYear=2025,
         journal="Nature Medicine",
-    );
-    assert [paper["pmid"] for paper in results] == ["1"];
+    )
+    assert [paper["pmid"] for paper in results] == ["1"]
 
 
 def testPapersToCsvUsesUtf8Bom() -> None:
-    csvContent = papersToCsv(filterPapers(PAPERS));
-    assert csvContent.startswith(b"\xef\xbb\xbf");
-    assert b"Diabetes treatment review" in csvContent;
+    csvContent = papersToCsv(filterPapers(PAPERS))
+    assert csvContent.startswith(b"\xef\xbb\xbf")
+    assert b"Diabetes treatment review" in csvContent
 
