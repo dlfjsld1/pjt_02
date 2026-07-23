@@ -4,21 +4,30 @@ import streamlit as st
 APP_CSS = """
 <style>
 :root {
-    --canvas: #edf3f1;
-    --surface: #f5faf8;
-    --ink: #173832;
-    --muted: #5d756f;
-    --accent: #147d6b;
-    --accent-dark: #0d5f51;
+    --canvas: #edf1f9;
+    --surface: #f7f9fe;
+    --ink: #14213d;
+    --muted: #71809d;
+    --accent: #5b6bff;
+    --accent-dark: #4858e8;
+    --accent-soft: #e1e5ff;
     --radius: 22px;
+    --shadow: 13px 15px 30px rgba(77, 91, 139, 0.16), -10px -10px 24px rgba(255, 255, 255, 0.86), inset 1px 1px 1px rgba(255, 255, 255, 0.78), inset -1px -1px 1px rgba(75, 87, 133, 0.08);
+    --shadow-soft: 8px 10px 22px rgba(77, 91, 139, 0.12), -7px -7px 18px rgba(255, 255, 255, 0.80);
 }
 .stApp {
     background:
-        radial-gradient(circle at 85% 8%, rgba(93, 189, 167, 0.24), transparent 24rem),
+        radial-gradient(circle at 13% 12%, rgba(255, 143, 120, 0.14), transparent 24rem),
+        radial-gradient(circle at 90% 85%, rgba(102, 117, 232, 0.14), transparent 30rem),
         var(--canvas);
     color: var(--ink);
+    font-family: "Plus Jakarta Sans", Pretendard, "Noto Sans KR", ui-sans-serif, system-ui, sans-serif;
 }
 [data-testid="stHeader"] { background: transparent; }
+[data-testid="stSidebar"] {
+    background: rgba(235, 239, 251, 0.74);
+    border-right: 1px solid rgba(255, 255, 255, 0.78);
+}
 .block-container {
     max-width: 1200px;
     padding-top: clamp(1.5rem, 4vw, 3rem);
@@ -31,15 +40,15 @@ h1, h2, h3, p, label { color: var(--ink); }
     margin: clamp(2rem, 8vh, 5rem) auto 1.5rem;
     padding: clamp(2rem, 6vw, 4.5rem);
     border: 1px solid rgba(255, 255, 255, 0.8);
-    border-radius: 34px;
-    background: rgba(245, 250, 248, 0.78);
-    box-shadow: 18px 18px 42px rgba(85, 113, 106, 0.18), -18px -18px 42px rgba(255, 255, 255, 0.82);
+    border-radius: 42px 30px 42px 30px;
+    background: rgba(247, 249, 254, 0.82);
+    box-shadow: var(--shadow);
 }
 .hero-kicker {
     color: var(--accent-dark);
     font-size: 0.82rem;
     font-weight: 750;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.09em;
     text-transform: uppercase;
 }
 .hero-title {
@@ -63,53 +72,77 @@ h1, h2, h3, p, label { color: var(--ink); }
 }
 .feature-chip {
     padding: 0.58rem 0.86rem;
-    border: 1px solid rgba(20, 125, 107, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.86);
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.52);
+    background: var(--accent-soft);
     color: var(--accent-dark);
     font-size: 0.88rem;
     font-weight: 650;
+    box-shadow: var(--shadow-soft);
 }
 .stButton > button, .stDownloadButton > button {
     min-height: 2.75rem;
     border: 0;
-    border-radius: 14px;
-    background: var(--accent);
+    border-radius: 16px 13px 18px 13px;
+    background: linear-gradient(145deg, #7b89ef, var(--accent-dark));
     color: white;
     font-weight: 700;
     white-space: nowrap;
-    box-shadow: 7px 7px 16px rgba(57, 101, 92, 0.18), -5px -5px 13px rgba(255, 255, 255, 0.72);
+    box-shadow: 6px 8px 15px rgba(79, 95, 212, 0.27), inset 2px 2px 2px rgba(255, 255, 255, 0.23);
 }
 .stButton > button:hover, .stDownloadButton > button:hover {
-    background: var(--accent-dark);
+    background: linear-gradient(145deg, #8b98f4, var(--accent-dark));
     color: white;
+    transform: translateY(-2px);
 }
 [data-testid="stMain"] button[data-testid^="stBaseButton"] p {
     color: white !important;
 }
-.stTextInput input, .stNumberInput input, [data-baseweb="select"] > div {
-    border: 1px solid rgba(20, 125, 107, 0.25);
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.78);
+.stTextInput input, .stNumberInput input, [data-baseweb="select"] > div, [data-testid="stChatInput"] textarea {
+    border: 1px solid transparent;
+    border-radius: 14px;
+    background: var(--surface);
     color: var(--ink);
+    box-shadow: inset 5px 5px 12px rgba(75, 87, 133, 0.13), inset -5px -5px 12px rgba(255, 255, 255, 0.82);
+}
+.stTextInput input:focus, .stNumberInput input:focus, [data-testid="stChatInput"] textarea:focus {
+    border-color: rgba(91, 107, 255, 0.35);
+    box-shadow: inset 5px 5px 12px rgba(75, 87, 133, 0.13), inset -5px -5px 12px rgba(255, 255, 255, 0.82), 0 0 0 4px rgba(91, 107, 255, 0.12);
 }
 [data-testid="stMetric"] {
     padding: 1rem;
     border: 1px solid rgba(255, 255, 255, 0.8);
-    border-radius: var(--radius);
-    background: rgba(245, 250, 248, 0.72);
-    box-shadow: 8px 8px 20px rgba(85, 113, 106, 0.10), -8px -8px 20px rgba(255, 255, 255, 0.68);
+    border-radius: var(--radius) 16px 26px 16px;
+    background: rgba(255, 255, 255, 0.70);
+    box-shadow: var(--shadow-soft);
 }
 [data-testid="stChatMessage"] {
-    border: 1px solid rgba(255, 255, 255, 0.72);
-    border-radius: var(--radius);
-    background: rgba(245, 250, 248, 0.72);
-    box-shadow: 8px 8px 20px rgba(85, 113, 106, 0.11), -8px -8px 20px rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.80);
+    border-radius: 22px 22px 22px 8px;
+    background: rgba(255, 255, 255, 0.86);
+    box-shadow: var(--shadow-soft);
+}
+[data-testid="stChatInput"] {
+    border: 1px solid rgba(255, 255, 255, 0.86);
+    border-radius: 24px 18px 26px 18px;
+    background: rgba(255, 255, 255, 0.86);
+    box-shadow: var(--shadow);
+}
+[data-testid="stChatInput"] button {
+    border-radius: 16px 13px 18px 13px;
+    background: linear-gradient(145deg, #7b89ef, var(--accent-dark));
+    box-shadow: 6px 8px 15px rgba(79, 95, 212, 0.27), inset 2px 2px 2px rgba(255, 255, 255, 0.23);
+}
+[data-testid="stAlert"] {
+    border-radius: 16px 13px 18px 13px;
+    border: 1px solid rgba(255, 255, 255, 0.82);
+    box-shadow: var(--shadow-soft);
 }
 [data-testid="stDataFrame"] {
-    border: 1px solid rgba(20, 125, 107, 0.12);
+    border: 1px solid rgba(91, 107, 255, 0.14);
     border-radius: var(--radius);
     overflow: hidden;
+    box-shadow: var(--shadow-soft);
 }
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
