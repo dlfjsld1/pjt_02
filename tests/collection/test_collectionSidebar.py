@@ -47,7 +47,7 @@ class CollectionSidebarTest(unittest.TestCase):
 
     def testRenderCollectionSidebarCollectsValidInput(self) -> None:
         sidebar = FakeSidebar("COVID-19 vaccine");
-        streamlit = SimpleNamespace(sidebar = sidebar);
+        streamlit = SimpleNamespace(sidebar = sidebar, session_state = {});
         expectedResult = CollectionResult(2, 2, 2, 0, ["1001", "1002"]);
 
         with patch.dict(sys.modules, {"streamlit": streamlit}):
@@ -62,10 +62,14 @@ class CollectionSidebarTest(unittest.TestCase):
         collectMock.assert_called_once_with("COVID-19 vaccine", 2022, 2025, 100);
         self.assertEqual(result.collectionResult, expectedResult);
         self.assertEqual(sidebar.successes, ["신규 2건, 중복 건너뜀 0건"]);
+        self.assertEqual(
+            streamlit.session_state["collectionLastResult"],
+            {"insertedCount": 2, "skippedCount": 0},
+        );
 
     def testRenderCollectionSidebarDoesNotCollectInvalidInput(self) -> None:
         sidebar = FakeSidebar("   ");
-        streamlit = SimpleNamespace(sidebar = sidebar);
+        streamlit = SimpleNamespace(sidebar = sidebar, session_state = {});
 
         with patch.dict(sys.modules, {"streamlit": streamlit}):
             from components.collection_sidebar import renderCollectionSidebar;
