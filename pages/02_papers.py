@@ -36,12 +36,47 @@ maximum_year = max(available_years) if available_years else 2100
 keyword = st.text_input("검색어", placeholder="예: diabetes, cancer immunotherapy")
 filter_column, journal_column = st.columns([2, 1])
 with filter_column:
-    selected_years = st.slider(
-        "출판 연도",
-        min_value=minimum_year,
-        max_value=maximum_year,
-        value=(minimum_year, maximum_year),
-    )
+    if minimum_year == maximum_year:
+        st.caption(f"출판 연도: {minimum_year}")
+        selected_years = (minimum_year, maximum_year)
+    else:
+        selected_years = st.slider(
+            "출판 연도",
+            min_value=minimum_year,
+            max_value=maximum_year,
+            value=(minimum_year, maximum_year),
+        )
+        equal_year_rules = "\n".join(
+            f"""
+            div[data-testid="stSlider"]:has(
+                input[aria-label$="start"][aria-valuetext="{year}"]
+            ):has(
+                input[aria-label$="end"][aria-valuetext="{year}"]
+            )
+            div:has(input[aria-label$="end"])
+            > [data-testid="stSliderThumbValue"] {{
+                display: none !important;
+            }}
+            """
+            for year in sorted(set(available_years))
+        )
+        st.markdown(
+            f"""
+            <style>
+            div[data-testid="stSlider"] [data-testid="stSliderThumbValue"] {{
+                transition: none !important;
+            }}
+            {equal_year_rules}
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+        selected_year_label = (
+            str(selected_years[0])
+            if selected_years[0] == selected_years[1]
+            else f"{selected_years[0]} ~ {selected_years[1]}"
+        )
+        st.caption(f"선택한 출판 연도: {selected_year_label}")
 with journal_column:
     selected_journal = st.selectbox("저널", get_journal_options(raw_papers))
 
