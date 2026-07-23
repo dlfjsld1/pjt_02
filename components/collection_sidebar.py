@@ -96,6 +96,10 @@ def renderCollectionSidebar() -> CollectionSidebarResult:
         f"신규 {collectionResult.insertedCount}건, "
         f"중복 건너뜀 {collectionResult.skippedCount}건"
     );
+    st.session_state["collectionLastResult"] = {
+        "insertedCount": collectionResult.insertedCount,
+        "skippedCount": collectionResult.skippedCount,
+    };
     return CollectionSidebarResult(
         criteria = criteria,
         collectRequested = True,
