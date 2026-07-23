@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import os
 from typing import Mapping
 
 MIN_RESULTS = 1
@@ -54,10 +53,15 @@ def validate_search_criteria(
 
 
 def get_ncbi_api_key(environment: Mapping[str, str] | None = None) -> str | None:
-    """Read the optional NCBI API key from the environment."""
+    """Read the optional NCBI API key from an injected environment or secrets."""
 
-    source = environment if environment is not None else os.environ
-    api_key = source.get("NCBI_API_KEY", "").strip()
+    if environment is not None:
+        api_key = environment.get("NCBI_API_KEY", "").strip()
+        return api_key or None
+
+    from src.config import get_ncbi_api_key as read_ncbi_api_key
+
+    api_key = read_ncbi_api_key()
     return api_key or None
 
 

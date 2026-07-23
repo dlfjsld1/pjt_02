@@ -1,3 +1,4 @@
+import os
 from typing import Any
 
 import streamlit as st
@@ -48,4 +49,16 @@ def get_openai_model() -> str:
     if model:
         return model
     return read_nested_secret("openai", "model", default="gpt-5.6-luna")
+
+
+def get_ncbi_api_key() -> str:
+    """Read the NCBI API key from Streamlit secrets or the environment."""
+
+    api_key = read_secret("NCBI_API_KEY", "ncbi_api_key")
+    if api_key:
+        return api_key
+    api_key = read_nested_secret("ncbi", "api_key")
+    if api_key:
+        return api_key
+    return os.environ.get("NCBI_API_KEY", "").strip()
 

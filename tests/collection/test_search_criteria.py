@@ -1,6 +1,9 @@
 """Unit tests for collection search input validation."""
 
+import sys
+from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 from src.collection.search_criteria import (
     MAX_RESULTS,
@@ -54,3 +57,19 @@ class SearchCriteriaTest(unittest.TestCase):
 
     def test_get_ncbi_api_key_returns_none_for_blank_value(self) -> None:
         self.assertIsNone(get_ncbi_api_key({"NCBI_API_KEY": "  "}))
+
+    def test_get_ncbi_api_key_reads_streamlit_secret_when_environment_is_not_injected(self) -> None:
+        config_module = SimpleNamespace(get_ncbi_api_key=lambda: "test-api-key")
+        with patch.dict(sys.modules, {"src.config": config_module}):
+            self.assertEqual(get_ncbi_api_key(), "test-api-key")
+
+    def test_build_search_request_uses_streamlit_secret_without_exposing_it_in_errors(self) -> None:
+        criteria, errors = validate_search_criteria("COVID-19 vaccine", 2022, 2025, 3)
+
+        config_module = SimpleNamespace(get_ncbi_api_key=lambda: "test-api-key")
+        with patch.dict(sys.modules, {"src.config": config_module}):
+            _, parameters = build_search_request(criteria)
+
+        self.assertEqual(errors, [])
+        self.assertEqual(parameters["api_key"], "test-api-key")
+        self.assertNotIn("test-api-key", " ".join(errors))
