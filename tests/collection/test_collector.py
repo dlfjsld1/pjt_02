@@ -41,12 +41,12 @@ SAMPLE_XML = """
 class FakeResponse:
     """A deterministic response used instead of a real PubMed API response."""
 
-    def __init__(self, payload: dict[str, object] | None = None, text: str = "") -> None:
-        self.payload = payload or {};
+    def __init__(self, payload: object = None, text: str = "") -> None:
+        self.payload = payload if payload is not None else {};
         self.text = text;
         self.error: Exception | None = None;
 
-    def json(self) -> dict[str, object]:
+    def json(self) -> object:
         return self.payload;
 
     def raise_for_status(self) -> None:
@@ -60,6 +60,7 @@ class FakeSession:
     def __init__(self) -> None:
         self.calls: list[tuple[str, dict[str, str | int], int]] = [];
         self.searchError: Exception | None = None;
+        self.searchPayload: object = {"esearchresult": {"idlist": ["1001", "1002"]}};
 
     def get(
         self,
@@ -73,7 +74,7 @@ class FakeSession:
         if url == PUBMED_EFETCH_URL:
             return FakeResponse(text = SAMPLE_XML);
 
-        response = FakeResponse(payload = {"esearchresult": {"idlist": ["1001", "1002"]}});
+        response = FakeResponse(payload = self.searchPayload);
         response.error = self.searchError;
         return response;
 
@@ -184,6 +185,19 @@ class CollectorTest(unittest.TestCase):
         self.session.searchError = RuntimeError("HTTP 500");
 
         with self.assertRaisesRegex(RuntimeError, "HTTP 500"):
+            collectPapers(
+                "COVID-19 vaccine",
+                2022,
+                2025,
+                100,
+                databasePath = self.databasePath,
+                client = self.client,
+            );
+
+    def testCollectPapersRejectsMalformedSearchResponse(self) -> None:
+        self.session.searchPayload = ["not", "an", "object"];
+
+        with self.assertRaisesRegex(ValueError, "응답 형식"):
             collectPapers(
                 "COVID-19 vaccine",
                 2022,
