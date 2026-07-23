@@ -40,3 +40,4 @@ def get_current_user_name() -> str:
 def require_login() -> None:
     if is_auth_configured() and not is_logged_in():
         st.switch_page("app.py")
+        st.stop()
