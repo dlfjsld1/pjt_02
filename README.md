@@ -2,6 +2,18 @@
 
 PubMed 논문 메타데이터를 수집·검색하고, 연구 맥락의 질문을 돕는 Streamlit 기반 연구 보조 서비스입니다.
 
+## 기술 스택
+
+| 영역 | 사용 기술 | 용도 |
+| --- | --- | --- |
+| 애플리케이션 | Python, Streamlit | 연구자용 웹 UI와 페이지 구성 |
+| 데이터 수집 | PubMed E-utilities, `requests` | 논문 검색과 메타데이터 수집 |
+| 데이터베이스 | Supabase, PostgreSQL | 논문·사용자별 챗봇 대화 영구 저장 |
+| 인증 | Streamlit OAuth, Google OAuth 2.0, Authlib | Google 로그인과 사용자 식별 |
+| AI | OpenAI API | 연구 맥락 질의 응답, 의료 조언 2차 분류 |
+| 데이터 처리·시각화 | pandas, Streamlit 차트 | 검색 결과 CSV 내보내기와 논문 통계 |
+| 배포 | Streamlit Community Cloud | 웹 애플리케이션 배포 |
+
 ## 구현 결과
 
 아래 화면은 로그인한 실제 연구자 계정으로 PubMed 수집·Supabase 저장·검색·챗봇을 실행해 캡처했습니다.
