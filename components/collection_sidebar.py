@@ -5,6 +5,8 @@ from __future__ import annotations;
 from dataclasses import dataclass;
 from datetime import date;
 
+from src.collection.collector import collectPapers;
+from src.collection.models import CollectionResult;
 from src.collection.searchCriteria import SearchCriteria, validateSearchCriteria;
 
 
@@ -14,6 +16,7 @@ class CollectionSidebarResult:
 
     criteria: SearchCriteria | None;
     collectRequested: bool;
+    collectionResult: CollectionResult | None;
 
 
 def renderCollectionSidebar() -> CollectionSidebarResult:
@@ -51,7 +54,11 @@ def renderCollectionSidebar() -> CollectionSidebarResult:
     collectRequested = st.sidebar.button("논문 수집", key = "collectPapers");
 
     if not collectRequested:
-        return CollectionSidebarResult(criteria = None, collectRequested = False);
+        return CollectionSidebarResult(
+            criteria = None,
+            collectRequested = False,
+            collectionResult = None,
+        );
 
     criteria, errors = validateSearchCriteria(
         keyword = keyword,
@@ -63,7 +70,34 @@ def renderCollectionSidebar() -> CollectionSidebarResult:
     for error in errors:
         st.sidebar.error(error);
 
+    if criteria is None:
+        return CollectionSidebarResult(
+            criteria = None,
+            collectRequested = True,
+            collectionResult = None,
+        );
+
+    try:
+        collectionResult = collectPapers(
+            criteria.keyword,
+            criteria.startYear,
+            criteria.endYear,
+            criteria.maxResults,
+        );
+    except Exception as error:
+        st.sidebar.error(f"논문 수집에 실패했습니다: {error}");
+        return CollectionSidebarResult(
+            criteria = criteria,
+            collectRequested = True,
+            collectionResult = None,
+        );
+
+    st.sidebar.success(
+        f"신규 {collectionResult.insertedCount}건, "
+        f"중복 건너뜀 {collectionResult.skippedCount}건"
+    );
     return CollectionSidebarResult(
         criteria = criteria,
         collectRequested = True,
+        collectionResult = collectionResult,
     );
