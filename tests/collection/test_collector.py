@@ -1,13 +1,11 @@
-"""Unit tests for PubMed collection, XML parsing, and SQLite deduplication."""
+"""Unit tests for PubMed collection, XML parsing, and repository deduplication."""
 
 from __future__ import annotations;
 
-from pathlib import Path;
-import sqlite3;
-import tempfile;
 import unittest;
 
 from src.collection.collector import collectPapers;
+from src.collection.models import Paper;
 from src.collection.pubmedClient import PUBMED_EFETCH_URL, PubMedClient;
 from src.collection.xmlParser import parsePubMedArticles;
 
@@ -79,17 +77,42 @@ class FakeSession:
         return response;
 
 
+class InMemoryPaperRepository:
+    """Repository double that follows the shared Supabase contract."""
+
+    def __init__(self) -> None:
+        self.papers: dict[str, Paper] = {};
+
+    def savePapers(self, papers: list[Paper]) -> tuple[int, int]:
+        insertedCount = 0;
+        for paper in papers:
+            if paper.pmid in self.papers:
+                continue;
+            self.papers[paper.pmid] = paper;
+            insertedCount += 1;
+        return insertedCount, len(papers) - insertedCount;
+
+    def loadPapers(self, limit: int = 1000) -> list[dict[str, object]]:
+        return [
+            {
+                "pmid": paper.pmid,
+                "title": paper.title,
+                "abstract": paper.abstract,
+                "journal": paper.journal,
+                "pub_year": paper.pubYear,
+                "authors": paper.authors,
+            }
+            for paper in list(self.papers.values())[:limit]
+        ];
+
+
 class CollectorTest(unittest.TestCase):
     """Verify collection behavior without calling the real PubMed API."""
 
     def setUp(self) -> None:
-        self.temporaryDirectory = tempfile.TemporaryDirectory();
-        self.databasePath = Path(self.temporaryDirectory.name) / "pubmed.db";
         self.session = FakeSession();
         self.client = PubMedClient(session = self.session, environment = {"NCBI_API_KEY": "test-key"});
-
-    def tearDown(self) -> None:
-        self.temporaryDirectory.cleanup();
+        self.repository = InMemoryPaperRepository();
 
     def testCollectPapersStoresMetadataAndSkipsExistingPmids(self) -> None:
         firstResult = collectPapers(
@@ -97,16 +120,16 @@ class CollectorTest(unittest.TestCase):
             2022,
             2025,
             100,
-            databasePath = self.databasePath,
             client = self.client,
+            repository = self.repository,
         );
         secondResult = collectPapers(
             "COVID-19 vaccine",
             2022,
             2025,
             100,
-            databasePath = self.databasePath,
             client = self.client,
+            repository = self.repository,
         );
 
         self.assertEqual(firstResult.requestedCount, 2);
@@ -114,18 +137,16 @@ class CollectorTest(unittest.TestCase):
         self.assertEqual(firstResult.insertedCount, 2);
         self.assertEqual(firstResult.skippedCount, 0);
         self.assertEqual(firstResult.pmids, ["1001", "1002"]);
-        connection = sqlite3.connect(self.databasePath);
-
-        try:
-            paper = connection.execute(
-                "SELECT pmid, title, abstract, journal, pub_year, authors FROM papers WHERE pmid = ?",
-                ("1001",),
-            ).fetchone();
-        finally:
-            connection.close();
-
+        storedPaper = self.repository.papers["1001"];
         self.assertEqual(
-            paper,
+            (
+                storedPaper.pmid,
+                storedPaper.title,
+                storedPaper.abstract,
+                storedPaper.journal,
+                storedPaper.pubYear,
+                storedPaper.authors,
+            ),
             (
                 "1001",
                 "First vaccine paper",
@@ -144,8 +165,8 @@ class CollectorTest(unittest.TestCase):
             2022,
             2025,
             100,
-            databasePath = self.databasePath,
             client = self.client,
+            repository = self.repository,
         );
 
         searchUrl, searchParameters, searchTimeout = self.session.calls[0];
@@ -175,8 +196,8 @@ class CollectorTest(unittest.TestCase):
                 2022,
                 2025,
                 100,
-                databasePath = self.databasePath,
                 client = self.client,
+                repository = self.repository,
             );
 
         self.assertEqual(self.session.calls, []);
@@ -190,8 +211,8 @@ class CollectorTest(unittest.TestCase):
                 2022,
                 2025,
                 100,
-                databasePath = self.databasePath,
                 client = self.client,
+                repository = self.repository,
             );
 
     def testCollectPapersRejectsMalformedSearchResponse(self) -> None:
@@ -203,6 +224,6 @@ class CollectorTest(unittest.TestCase):
                 2022,
                 2025,
                 100,
-                databasePath = self.databasePath,
                 client = self.client,
+                repository = self.repository,
             );

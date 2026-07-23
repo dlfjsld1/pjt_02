@@ -1,28 +1,42 @@
-"""Unit tests for collection overview SQL aggregates."""
+"""Unit tests for Supabase-backed collection overview aggregates."""
 
 from __future__ import annotations;
 
-from pathlib import Path;
-import tempfile;
 import unittest;
 
 from src.analytics.overview import getOverviewMetrics;
 from src.collection.models import Paper;
-from src.collection.paperRepository import connectDatabase, savePapers;
+
+
+class InMemoryPaperRepository:
+    """Paper store double used to verify aggregate behavior."""
+
+    def __init__(self, papers: list[Paper] | None = None) -> None:
+        self.papers = papers or [];
+
+    def savePapers(self, papers: list[Paper]) -> tuple[int, int]:
+        self.papers.extend(papers);
+        return len(papers), 0;
+
+    def loadPapers(self, limit: int = 1000) -> list[dict[str, object]]:
+        return [
+            {
+                "pmid": paper.pmid,
+                "title": paper.title,
+                "abstract": paper.abstract,
+                "journal": paper.journal,
+                "pub_year": paper.pubYear,
+                "authors": paper.authors,
+            }
+            for paper in self.papers[:limit]
+        ];
 
 
 class OverviewMetricsTest(unittest.TestCase):
-    """Verify overview totals and charts from temporary SQLite data."""
+    """Verify overview totals and charts from the shared paper store."""
 
-    def setUp(self) -> None:
-        self.temporaryDirectory = tempfile.TemporaryDirectory();
-        self.databasePath = Path(self.temporaryDirectory.name) / "pubmed.db";
-
-    def tearDown(self) -> None:
-        self.temporaryDirectory.cleanup();
-
-    def testGetOverviewMetricsReturnsZeroStateForEmptyDatabase(self) -> None:
-        metrics = getOverviewMetrics(self.databasePath);
+    def testGetOverviewMetricsReturnsZeroStateForEmptyRepository(self) -> None:
+        metrics = getOverviewMetrics(InMemoryPaperRepository());
 
         self.assertEqual(metrics.totalPapers, 0);
         self.assertEqual(metrics.totalJournals, 0);
@@ -30,20 +44,15 @@ class OverviewMetricsTest(unittest.TestCase):
         self.assertEqual(metrics.topJournals, []);
 
     def testGetOverviewMetricsGroupsYearsAndTopJournals(self) -> None:
-        papers = [
-            Paper("1", "A", "", "Journal A", 2022, "Author A"),
-            Paper("2", "B", "", "Journal A", 2022, "Author B"),
-            Paper("3", "C", "", "Journal B", 2023, "Author C"),
-            Paper("4", "D", "", "", None, "Author D"),
-        ];
-        connection = connectDatabase(self.databasePath);
-
-        try:
-            savePapers(connection, papers);
-        finally:
-            connection.close();
-
-        metrics = getOverviewMetrics(self.databasePath, topJournalLimit = 1);
+        repository = InMemoryPaperRepository(
+            [
+                Paper("1", "A", "", "Journal A", 2022, "Author A"),
+                Paper("2", "B", "", "Journal A", 2022, "Author B"),
+                Paper("3", "C", "", "Journal B", 2023, "Author C"),
+                Paper("4", "D", "", "", None, "Author D"),
+            ]
+        );
+        metrics = getOverviewMetrics(repository, topJournalLimit = 1);
 
         self.assertEqual(metrics.totalPapers, 4);
         self.assertEqual(metrics.totalJournals, 2);

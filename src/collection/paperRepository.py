@@ -1,61 +1,81 @@
-"""SQLite persistence for normalized PubMed papers."""
+"""Supabase persistence for normalized PubMed papers."""
 
 from __future__ import annotations;
 
-from pathlib import Path;
-import sqlite3;
+from typing import Any, Protocol;
 
 from .models import Paper;
 
-DEFAULT_DATABASE_PATH = Path("data/pubmed.db");
-MIGRATION_PATH = Path(__file__).resolve().parents[2] / "migrations" / "001_papers.sql";
+
+class PaperStore(Protocol):
+    """Persistence contract shared by collection, overview, and search."""
+
+    def savePapers(self, papers: list[Paper]) -> tuple[int, int]: ...
+
+    def loadPapers(self, limit: int = 1000) -> list[dict[str, Any]]: ...
 
 
-def connectDatabase(databasePath: str | Path = DEFAULT_DATABASE_PATH) -> sqlite3.Connection:
-    """Open the collection database and create the papers table when needed."""
+class PaperRepository:
+    """Store and load PubMed papers from the shared Supabase table."""
 
-    path = Path(databasePath);
-    path.parent.mkdir(parents = True, exist_ok = True);
-    connection = sqlite3.connect(path);
-    ensurePapersTable(connection);
-    return connection;
+    def __init__(self, client: Any | None = None) -> None:
+        if client is not None:
+            self.client = client;
+            return;
+        from src.config import getSupabaseCredentials;
 
-
-def ensurePapersTable(connection: sqlite3.Connection) -> None:
-    """Apply the owned papers-table migration."""
-
-    schema = MIGRATION_PATH.read_text(encoding = "utf-8");
-    connection.executescript(schema);
-    connection.commit();
-
-
-def savePapers(connection: sqlite3.Connection, papers: list[Paper]) -> tuple[int, int]:
-    """Save papers transactionally and return inserted and skipped counts."""
-
-    insertedCount = 0;
-    skippedCount = 0;
-
-    with connection:
-        for paper in papers:
-            cursor = connection.execute(
-                """
-                INSERT OR IGNORE INTO papers (
-                    pmid, title, abstract, journal, pub_year, authors
-                ) VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    paper.pmid,
-                    paper.title,
-                    paper.abstract,
-                    paper.journal,
-                    paper.pubYear,
-                    paper.authors,
-                ),
+        supabaseUrl, supabaseKey = getSupabaseCredentials();
+        if not supabaseUrl or not supabaseKey:
+            raise RuntimeError("Supabase URL과 서버 키를 secrets.toml에 설정해 주세요.");
+        if supabaseKey.startswith("sb_publishable_"):
+            raise RuntimeError(
+                "SUPABASE_SECRET_KEY에는 publishable 키가 아닌 sb_secret 서버 키를 설정해 주세요."
             );
+        from supabase import create_client;
 
-            if cursor.rowcount == 1:
-                insertedCount += 1;
-            else:
-                skippedCount += 1;
+        self.client = create_client(supabaseUrl, supabaseKey);
 
-    return insertedCount, skippedCount;
+    def savePapers(self, papers: list[Paper]) -> tuple[int, int]:
+        if not papers:
+            return 0, 0;
+        pmids = [paper.pmid for paper in papers];
+        existingResponse = (
+            self.client.table("papers")
+            .select("pmid")
+            .in_("pmid", pmids)
+            .execute()
+        );
+        existingPmids = {str(row["pmid"]) for row in existingResponse.data or []};
+        newPapers = [paper for paper in papers if paper.pmid not in existingPmids];
+        if newPapers:
+            self.client.table("papers").insert(
+                [self.serializePaper(paper) for paper in newPapers]
+            ).execute();
+        return len(newPapers), len(papers) - len(newPapers);
+
+    def loadPapers(self, limit: int = 1000) -> list[dict[str, Any]]:
+        response = (
+            self.client.table("papers")
+            .select("pmid, title, abstract, journal, pub_year, authors")
+            .order("pub_year", desc = True)
+            .limit(limit)
+            .execute()
+        );
+        return list(response.data or []);
+
+    @staticmethod
+    def serializePaper(paper: Paper) -> dict[str, Any]:
+        return {
+            "pmid": paper.pmid,
+            "title": paper.title,
+            "abstract": paper.abstract,
+            "journal": paper.journal,
+            "pub_year": paper.pubYear,
+            "authors": paper.authors,
+        };
+
+
+def savePapers(repository: PaperStore, papers: list[Paper]) -> tuple[int, int]:
+    """Save papers through the shared repository contract."""
+
+    return repository.savePapers(papers);

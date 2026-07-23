@@ -2,10 +2,8 @@
 
 from __future__ import annotations;
 
-from pathlib import Path;
-
 from .models import CollectionResult;
-from .paperRepository import DEFAULT_DATABASE_PATH, connectDatabase, savePapers;
+from .paperRepository import PaperRepository, PaperStore;
 from .pubmedClient import PubMedClient;
 from .searchCriteria import validateSearchCriteria;
 from .xmlParser import parsePubMedArticles;
@@ -17,8 +15,8 @@ def collectPapers(
     endYear: int,
     maxResults: int,
     *,
-    databasePath: str | Path = DEFAULT_DATABASE_PATH,
     client: PubMedClient | None = None,
+    repository: PaperStore | None = None,
 ) -> CollectionResult:
     """Collect PubMed papers in batches and save only previously unseen PMIDs."""
 
@@ -32,12 +30,8 @@ def collectPapers(
     xmlText = pubmedClient.fetchArticles(pmids);
     papers = parsePubMedArticles(xmlText);
 
-    connection = connectDatabase(databasePath);
-
-    try:
-        insertedCount, skippedCount = savePapers(connection, papers);
-    finally:
-        connection.close();
+    paperRepository = repository if repository is not None else PaperRepository();
+    insertedCount, skippedCount = paperRepository.savePapers(papers);
 
     return CollectionResult(
         requestedCount = len(pmids),

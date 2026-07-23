@@ -1,16 +1,17 @@
-"""Read-only SQLite aggregates for the collection overview page."""
+"""Paper aggregates for the Supabase-backed overview page."""
 
 from __future__ import annotations;
 
+from collections import Counter;
 from dataclasses import dataclass;
-from pathlib import Path;
+from typing import Any;
 
-from src.collection.paperRepository import DEFAULT_DATABASE_PATH, connectDatabase;
+from src.collection.paperRepository import PaperRepository, PaperStore;
 
 
 @dataclass(frozen = True)
 class OverviewMetrics:
-    """Database totals and chart-ready aggregates for the overview."""
+    """Database totals and chart-ready aggregates."""
 
     totalPapers: int;
     totalJournals: int;
@@ -19,56 +20,37 @@ class OverviewMetrics:
 
 
 def getOverviewMetrics(
-    databasePath: str | Path = DEFAULT_DATABASE_PATH,
+    repository: PaperStore | None = None,
     topJournalLimit: int = 10,
 ) -> OverviewMetrics:
-    """Load overview metrics without placing SQL or transformation logic in the UI."""
+    """Load the same Supabase papers used by collection and search."""
 
-    connection = connectDatabase(databasePath);
-
-    try:
-        totalPapers = connection.execute("SELECT COUNT(*) FROM papers").fetchone()[0];
-        totalJournals = connection.execute(
-            """
-            SELECT COUNT(DISTINCT journal)
-            FROM papers
-            WHERE TRIM(COALESCE(journal, '')) != ''
-            """
-        ).fetchone()[0];
-        yearRows = connection.execute(
-            """
-            SELECT pub_year, COUNT(*) AS paper_count
-            FROM papers
-            WHERE pub_year IS NOT NULL
-            GROUP BY pub_year
-            ORDER BY pub_year
-            """
-        ).fetchall();
-        journalRows = connection.execute(
-            """
-            SELECT journal, COUNT(*) AS paper_count
-            FROM papers
-            WHERE TRIM(COALESCE(journal, '')) != ''
-            GROUP BY journal
-            ORDER BY paper_count DESC, journal ASC
-            LIMIT ?
-            """,
-            (topJournalLimit,),
-        ).fetchall();
-    finally:
-        connection.close();
-
+    paperRepository = repository if repository is not None else PaperRepository();
+    papers = paperRepository.loadPapers(limit = 10000);
+    yearCounts = Counter(
+        int(paper["pub_year"])
+        for paper in papers
+        if paper.get("pub_year") is not None
+    );
+    journalCounts = Counter(
+        str(paper["journal"]).strip()
+        for paper in papers
+        if str(paper.get("journal") or "").strip()
+    );
     papersByYear = [
-        {"year": year, "count": count}
-        for year, count in yearRows
+        {"year": year, "count": yearCounts[year]}
+        for year in sorted(yearCounts)
     ];
-    topJournals = [
+    topJournals: list[dict[str, Any]] = [
         {"journal": journal, "count": count}
-        for journal, count in journalRows
+        for journal, count in sorted(
+            journalCounts.items(),
+            key = lambda item: (-item[1], item[0]),
+        )[:topJournalLimit]
     ];
     return OverviewMetrics(
-        totalPapers = totalPapers,
-        totalJournals = totalJournals,
+        totalPapers = len(papers),
+        totalJournals = len(journalCounts),
         papersByYear = papersByYear,
         topJournals = topJournals,
     );
