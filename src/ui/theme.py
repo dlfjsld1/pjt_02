@@ -109,6 +109,29 @@ h1, h2, h3, p, label { color: var(--ink); }
     border-color: rgba(91, 107, 255, 0.35);
     box-shadow: inset 5px 5px 12px rgba(75, 87, 133, 0.13), inset -5px -5px 12px rgba(255, 255, 255, 0.82), 0 0 0 4px rgba(91, 107, 255, 0.12);
 }
+[data-testid="stNumberInputContainer"] {
+    overflow: hidden;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow: inset 5px 5px 12px rgba(75, 87, 133, 0.13), inset -5px -5px 12px rgba(255, 255, 255, 0.82);
+}
+[data-testid="stNumberInputContainer"] input {
+    box-shadow: none;
+}
+[data-testid="stNumberInputContainer"] button {
+    min-width: 2rem;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--ink);
+    box-shadow: none;
+}
+[data-testid="stNumberInputContainer"] button:hover:not(:disabled) {
+    background: var(--accent-soft);
+    color: var(--accent-dark);
+    transform: none;
+}
 [data-testid="stMetric"] {
     padding: 1rem;
     border: 1px solid rgba(255, 255, 255, 0.8);
@@ -143,6 +166,24 @@ h1, h2, h3, p, label { color: var(--ink); }
     border-radius: var(--radius);
     overflow: hidden;
     box-shadow: var(--shadow-soft);
+}
+[data-testid="stVegaLiteChart"] {
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.80);
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.70);
+    box-shadow: var(--shadow-soft);
+}
+[data-testid="stVegaLiteChart"] svg.marks {
+    background-color: transparent !important;
+}
+[data-testid="stVegaLiteChart"] .role-axis text {
+    fill: var(--ink) !important;
+}
+[data-testid="stVegaLiteChart"] .role-axis-grid line,
+[data-testid="stVegaLiteChart"] .role-axis path,
+[data-testid="stVegaLiteChart"] .role-axis line {
+    stroke: rgba(20, 33, 61, 0.16) !important;
 }
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
