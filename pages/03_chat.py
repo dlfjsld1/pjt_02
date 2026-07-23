@@ -21,7 +21,8 @@ try:
 except Exception:
     repository_error = True
 
-if "chatMessages" not in st.session_state:
+if st.session_state.get("chatOwnerId") != owner_id:
+    st.session_state["chatOwnerId"] = owner_id
     if repository is not None:
         try:
             st.session_state["chatMessages"] = repository.load_messages(owner_id)

@@ -1,17 +1,27 @@
 from datetime import datetime, timezone
 from typing import Any
 
-from supabase import Client, create_client
-
-from src.config import get_supabase_credentials
-
-
 class ChatRepository:
-    def __init__(self) -> None:
+    """Persist chat messages with the server-only Supabase key."""
+
+    def __init__(self, client: Any | None = None) -> None:
+        if client is not None:
+            self.client = client
+            return
+
+        from src.config import get_supabase_credentials
+
         supabase_url, supabase_key = get_supabase_credentials()
         if not supabase_url or not supabase_key:
             raise RuntimeError("Supabase URL과 서버 키를 secrets.toml에 설정해 주세요.")
-        self.client: Client = create_client(supabase_url, supabase_key)
+        if supabase_key.startswith("sb_publishable_"):
+            raise RuntimeError(
+                "SUPABASE_SECRET_KEY에는 publishable 키가 아닌 sb_secret 서버 키를 설정해 주세요."
+            )
+
+        from supabase import create_client
+
+        self.client = create_client(supabase_url, supabase_key)
 
     def load_messages(self, owner_id: str, limit: int = 100) -> list[dict[str, Any]]:
         response = (
