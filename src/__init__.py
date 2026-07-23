@@ -1,0 +1,2 @@
+"""Meditoktok application package."""
+
